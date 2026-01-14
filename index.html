@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retainer Deliverables - Circular View</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        #root {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const CircularProgress = ({ percentage, size = 180, strokeWidth = 12, color }) => {
+            const radius = (size - strokeWidth) / 2;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            return (
+                <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+                    {/* Background circle */}
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke="#e5e7eb"
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                    />
+                    {/* Progress circle */}
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke={color}
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        style={{
+                            transition: 'stroke-dashoffset 0.5s ease'
+                        }}
+                    />
+                </svg>
+            );
+        };
+        
+        const DeliverableCircle = ({ retainer, onComplete, onUncomplete }) => {
+            const totalDeliverables = retainer.deliverables.reduce((sum, d) => sum + d.total, 0);
+            const completedDeliverables = retainer.deliverables.reduce((sum, d) => sum + d.completed, 0);
+            const percentage = totalDeliverables > 0 ? (completedDeliverables / totalDeliverables) * 100 : 0;
+            
+            return (
+                <div 
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        transition: 'all 0.3s ease',
+                        padding: '20px'
+                    }}
+                >
+                    <div style={{ position: 'relative', marginBottom: '20px' }}>
+                        {/* Total number on top-right */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '-10px',
+                            right: '-15px',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            color: '#6b7280',
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
+                        }}>
+                            {totalDeliverables}
+                        </div>
+                        
+                        <CircularProgress 
+                            percentage={percentage} 
+                            size={180} 
+                            strokeWidth={12}
+                            color={retainer.color}
+                        />
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{
+                                fontSize: '48px',
+                                fontWeight: 'bold',
+                                color: retainer.color,
+                                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                                lineHeight: '1'
+                            }}>
+                                {completedDeliverables}
+                            </div>
+                            <div style={{
+                                fontSize: '13px',
+                                color: '#6b7280',
+                                marginTop: '8px',
+                                fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
+                            }}>
+                                completed
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Brand Name */}
+                    <div style={{
+                        marginBottom: '20px',
+                        textAlign: 'center'
+                    }}>
+                        <h3 style={{
+                            fontSize: '20px',
+                            fontWeight: 'bold',
+                            color: '#111827',
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
+                        }}>
+                            {retainer.name}
+                        </h3>
+                    </div>
+                    
+                    {/* Deliverable Controls with Plus/Minus (No Boxes) */}
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        width: '100%',
+                        maxWidth: '300px'
+                    }}>
+                        {retainer.deliverables.map((deliverable, idx) => (
+                            <div key={idx} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '5px 0'
+                            }}>
+                                <div style={{
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    color: '#374151',
+                                    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                                    minWidth: '80px'
+                                }}>
+                                    {deliverable.type}
+                                </div>
+                                
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px'
+                                }}>
+                                    <button
+                                        onClick={() => onUncomplete(idx)}
+                                        disabled={deliverable.completed === 0}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: deliverable.completed === 0 ? '#d1d5db' : '#374151',
+                                            fontSize: '20px',
+                                            fontWeight: 'bold',
+                                            cursor: deliverable.completed === 0 ? 'not-allowed' : 'pointer',
+                                            padding: '0',
+                                            width: '24px',
+                                            height: '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (deliverable.completed > 0) {
+                                                e.target.style.color = '#111827';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (deliverable.completed > 0) {
+                                                e.target.style.color = '#374151';
+                                            }
+                                        }}
+                                    >
+                                        −
+                                    </button>
+                                    
+                                    <div style={{
+                                        fontSize: '16px',
+                                        fontWeight: 'bold',
+                                        color: '#111827',
+                                        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                                        minWidth: '45px',
+                                        textAlign: 'center'
+                                    }}>
+                                        {deliverable.completed}/{deliverable.total}
+                                    </div>
+                                    
+                                    <button
+                                        onClick={() => onComplete(idx)}
+                                        disabled={deliverable.completed >= deliverable.total}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: deliverable.completed >= deliverable.total ? '#d1d5db' : retainer.color,
+                                            fontSize: '20px',
+                                            fontWeight: 'bold',
+                                            cursor: deliverable.completed >= deliverable.total ? 'not-allowed' : 'pointer',
+                                            padding: '0',
+                                            width: '24px',
+                                            height: '24px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (deliverable.completed < deliverable.total) {
+                                                e.target.style.opacity = '0.7';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (deliverable.completed < deliverable.total) {
+                                                e.target.style.opacity = '1';
+                                            }
+                                        }}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        
+        const DeliverableTracker = () => {
+            const [retainers, setRetainers] = useState([
+                {
+                    name: "Mindset Conquest",
+                    color: "#1a2b4a",
+                    deliverables: [
+                        { type: "Reels", total: 20, completed: 0 },
+                        { type: "Carousels", total: 8, completed: 0 },
+                        { type: "Written", total: 8, completed: 0 },
+                        { type: "Horizontal", total: 4, completed: 0 }
+                    ]
+                },
+                {
+                    name: "Macro Managed",
+                    color: "#0d1b2a",
+                    deliverables: [
+                        { type: "Carousels", total: 10, completed: 0 },
+                        { type: "Reels", total: 20, completed: 0 }
+                    ]
+                },
+                {
+                    name: "Geoscape",
+                    color: "#415a77",
+                    deliverables: [
+                        { type: "Reels", total: 15, completed: 0 }
+                    ]
+                }
+            ]);
+            
+            const handleComplete = (retainerIndex, deliverableIndex) => {
+                const newRetainers = [...retainers];
+                const deliverable = newRetainers[retainerIndex].deliverables[deliverableIndex];
+                if (deliverable.completed < deliverable.total) {
+                    deliverable.completed += 1;
+                    setRetainers(newRetainers);
+                }
+            };
+            
+            const handleUncomplete = (retainerIndex, deliverableIndex) => {
+                const newRetainers = [...retainers];
+                const deliverable = newRetainers[retainerIndex].deliverables[deliverableIndex];
+                if (deliverable.completed > 0) {
+                    deliverable.completed -= 1;
+                    setRetainers(newRetainers);
+                }
+            };
+            
+            return (
+                <div>
+                    {/* Header */}
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '8px',
+                        padding: '40px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        marginBottom: '40px',
+                        border: '1px solid #e5e7eb',
+                        textAlign: 'center'
+                    }}>
+                        <h1 style={{
+                            fontSize: '36px',
+                            fontWeight: 'bold',
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+                            color: '#1a2b4a',
+                            marginBottom: '10px',
+                            letterSpacing: '-0.5px'
+                        }}>
+                            Deliverables Dashboard
+                        </h1>
+                        <p style={{
+                            color: '#6b7280',
+                            fontSize: '16px',
+                            fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif"
+                        }}>
+                            Track your retainer project deliverables
+                        </p>
+                    </div>
+                    
+                    {/* Circular Progress Displays */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                        gap: '40px',
+                        justifyItems: 'center'
+                    }}>
+                        {retainers.map((retainer, idx) => (
+                            <DeliverableCircle
+                                key={idx}
+                                retainer={retainer}
+                                onComplete={(deliverableIdx) => handleComplete(idx, deliverableIdx)}
+                                onUncomplete={(deliverableIdx) => handleUncomplete(idx, deliverableIdx)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+        
+        ReactDOM.render(<DeliverableTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
